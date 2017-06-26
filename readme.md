@@ -10,6 +10,8 @@ $ go install github.com/arbarlow/surematics/...
 
 Simple postcode distance calculator, using haversine formula. This is "as the crow flies" and so not accurate enough for say, a maps service or driving directions.
 
+There are some comments in the code..
+
 To use...
 
 ```
@@ -20,7 +22,7 @@ $ postcode 'SW1A 1AA' 'E8 4AA'
 
 Super simple and stupid chat client and server.
 
-The server is a simple tcp socket that sends broadcasts all things to all clients and terminates responses with a `\r` so that respones with multiple lines can be handled. A list of current users is simply send with a prefix of `u:` which the chat client handles differently.
+The server is a simple tcp socket that sends a broadcast to all clients and terminates responses with a `\r` so that respones with multiple lines can be handled. A list of current users is simply sent with a prefix of `u:` which the chat client handles differently.
 
 First run the server..
 
