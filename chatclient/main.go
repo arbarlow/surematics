@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 
 	"github.com/jroimartin/gocui"
 )
@@ -49,23 +50,51 @@ func main() {
 	}
 
 	go func(g *gocui.Gui) {
-		r := bufio.NewReader(conn)
-		var err error
-		var s string
-		for err == nil {
-			s, err = r.ReadString('\r')
-			if err == nil {
-				fmt.Printf("%q", s)
-			}
-			g.Execute(func(g *gocui.Gui) error {
-				m, err := g.View("main")
-				if err != nil {
-					return err
+		scanner := bufio.NewScanner(conn)
+		split := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+			for i := 0; i < len(data); i++ {
+				if data[i] == '\r' {
+					return i + 1, data[:i], nil
 				}
+			}
+			return 0, data, bufio.ErrFinalToken
+		}
+		scanner.Split(split)
 
-				m.Write([]byte(s))
-				return nil
-			})
+		for scanner.Scan() {
+			if strings.HasPrefix(scanner.Text(), "u:") {
+				go func(t string) {
+					g.Execute(func(g *gocui.Gui) error {
+						m, err := g.View("side")
+						if err != nil {
+							return err
+						}
+						t = strings.TrimPrefix(t, "u:\n")
+
+						m.Clear()
+						m.Write([]byte(t))
+						return nil
+					})
+				}(scanner.Text())
+				continue
+			}
+
+			go func(t string) {
+				g.Execute(func(g *gocui.Gui) error {
+					m, err := g.View("main")
+					if err != nil {
+						return err
+					}
+
+					m.Write([]byte(t))
+					return nil
+				})
+			}(scanner.Text())
+
+		}
+
+		if err := scanner.Err(); err != nil {
+			fmt.Printf("Invalid input: %s", err)
 		}
 	}(g)
 

@@ -36,29 +36,16 @@ func main() {
 		panic(err)
 	}
 
-	// go func() {
-	// 	c := time.Tick(1 * time.Second)
-	// 	for range c {
-	// 		for i, connection := range cons {
-
-	// 			conn := connection.conn
-	// 			conn.SetReadDeadline(time.Now())
-	// 			if _, err := conn.Read([]byte{}); err != nil {
-	// 				fmt.Printf("err = %+v\n", err)
-	// 				conn.Close()
-	// 				cons = append(cons[:i], cons[i+1:]...)
-	// 			}
-	// 		}
-	// 	}
-	// }()
-
+	i := 1
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
 			fmt.Printf("err accepting = %+v\n", err)
 		}
 
-		c := &Connection{conn: &conn, name: "anonymous"}
+		i = i + 1
+		id := fmt.Sprintf("anonymous-%d", i)
+		c := &Connection{conn: &conn, name: id}
 		cons = append(cons, c)
 
 		go func(conn net.Conn) {
@@ -75,6 +62,7 @@ func main() {
 					name := strings.TrimPrefix(scanner.Text(), "/name ")
 					c.name = name
 					conn.Write([]byte("name set to " + c.name + "\n\r"))
+					sendConns()
 					continue
 				}
 
@@ -93,7 +81,7 @@ func sendConns() {
 	for _, c := range cons {
 		names = append(names, c.name)
 	}
-	writeToAll(strings.Join(names, "\n") + "\n")
+	writeToAll("u:\n" + strings.Join(names, "\n") + "\n")
 }
 
 func writeToAll(body string) {
@@ -101,7 +89,6 @@ func writeToAll(body string) {
 		_, err := (*c.conn).Write([]byte(body + "\r"))
 		if err != nil {
 			cons = append(cons[:i], cons[i+1:]...)
-			sendConns()
 		}
 	}
 }
